@@ -67,33 +67,18 @@ Each action in `actions`:
 
 ---
 
-### Notification Reply (`notification_reply`)
-
-Sent from Desktop to Android to reply to a notification.
-
-```jsonc
-{
-  "type": "notification_reply",
-  "payload": {
-    "id": "abc123",             // Notification ID
-    "key": "quick_reply",       // RemoteInput key
-    "text": "Sure, talk later"  // The reply message
-  }
-}
-```
-
----
-
 ### Notification Action (`notification_action`)
 
-Sent from Desktop to Android to trigger a button/action in the notification.
+Sent from Desktop to Android to trigger a notification action. This covers both button actions and remote input (reply) actions.
 
 ```jsonc
 {
   "type": "notification_action",
   "payload": {
-    "id": "abc123",
-    "key": "mark_read"        // Action key from the notification
+    "id": "abc123",                 // Notification ID
+    "key": "quick_reply",           // Action or RemoteInput key
+    "type": "remote_input",          // "remote_input" or "action"
+    "body": "Sure, talk later"       // Optional; only for remote_input
   }
 }
 ```
@@ -138,27 +123,29 @@ Sent from Desktop to Android to dismiss the notification.
 }
 ```
 
-**Reply from Desktop:**
-
-```json
-{
-  "type": "notification_reply",
-  "payload": {
-    "id": "abc123",
-    "key": "quick_reply",
-    "text": "Sure, talk later"
-  }
-}
-```
-
-**Action from Desktop:**
+**Reply from Desktop (remote_input):**
 
 ```json
 {
   "type": "notification_action",
   "payload": {
     "id": "abc123",
-    "key": "mark_read"
+    "key": "quick_reply",
+    "type": "remote_input",
+    "body": "Sure, talk later"
+  }
+}
+```
+
+**Action from Desktop (button/action):**
+
+```json
+{
+  "type": "notification_action",
+  "payload": {
+    "id": "abc123",
+    "key": "mark_read",
+    "type": "action"
   }
 }
 ```
@@ -179,8 +166,9 @@ Sent from Desktop to Android to dismiss the notification.
 ## How to Handle
 
 - On Android, keep a map of active notifications with their `id` and action metadata.
-- On `notification_reply`, use `RemoteInput` and `PendingIntent` to send the reply.
-- On `notification_action`, call `PendingIntent.send()` for the specified action.
+- On `notification_action`:
+  - If `type` is `remote_input` and `body` is present, use `RemoteInput` and `PendingIntent` to send the reply.
+  - If `type` is `action`, call `PendingIntent.send()` for the specified action.
 - On `notification_dismiss`, use `NotificationManager.cancel()` with the tag/id.
 
 ---
