@@ -69,34 +69,29 @@ Each action in `actions`:
 
 ### Notification Action (`notification_action`)
 
-Sent from Desktop to Android to trigger a notification action. This covers both button actions and remote input (reply) actions.
+Sent to trigger a notification action. This covers button actions, remote input (reply) actions, and dismiss actions. Can be sent by either Desktop or Android.
 
 ```jsonc
 {
   "type": "notification_action",
   "payload": {
     "id": "abc123",                 // Notification ID
-    "key": "quick_reply",           // Action or RemoteInput key
-    "type": "remote_input",          // "remote_input" or "action"
+    "type": "remote_input",         // See action types table below
+    "key": "quick_reply",           // Action or RemoteInput key (not needed for dismiss)
     "body": "Sure, talk later"       // Optional; only for remote_input
   }
 }
 ```
 
----
+#### Action Types
 
-### Notification Dismiss (`notification_dismiss`)
+| Type                  | Direction          | Description                                 |
+|-----------------------|--------------------|---------------------------------------------|
+| `remote_input`        | Desktop → Android  | Reply to a notification (with input)        |
+| `action`              | Desktop → Android  | Trigger a button/action                     |
+| `notification_dismiss`| Both ways          | Dismiss a notification                      |
 
-Sent from Desktop to Android to dismiss the notification.
-
-```json
-{
-  "type": "notification_dismiss",
-  "payload": {
-    "id": "abc123"
-  }
-}
-```
+More action types may be added in the future.
 
 ---
 
@@ -150,13 +145,14 @@ Sent from Desktop to Android to dismiss the notification.
 }
 ```
 
-**Dismiss from Desktop:**
+**Dismiss (either direction):**
 
 ```json
 {
-  "type": "notification_dismiss",
+  "type": "notification_action",
   "payload": {
-    "id": "abc123"
+    "id": "abc123",
+    "type": "notification_dismiss"
   }
 }
 ```
@@ -166,10 +162,11 @@ Sent from Desktop to Android to dismiss the notification.
 ## How to Handle
 
 - On Android, keep a map of active notifications with their `id` and action metadata.
+- On Desktop, keep a map of active notifications and their state.
 - On `notification_action`:
-  - If `type` is `remote_input` and `body` is present, use `RemoteInput` and `PendingIntent` to send the reply.
-  - If `type` is `action`, call `PendingIntent.send()` for the specified action.
-- On `notification_dismiss`, use `NotificationManager.cancel()` with the tag/id.
+  - If `type` is `remote_input` and `body` is present, use `RemoteInput` and `PendingIntent` to send the reply (Android), or update UI/state (Desktop).
+  - If `type` is `action`, call `PendingIntent.send()` for the specified action (Android), or update UI/state (Desktop).
+  - If `type` is `notification_dismiss`, use `NotificationManager.cancel()` with the notification id (Android), or remove the notification from the UI/state (Desktop). This message can be sent by either side.
 
 ---
 
